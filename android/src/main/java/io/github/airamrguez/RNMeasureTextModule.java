@@ -92,6 +92,33 @@ public class RNMeasureTextModule extends ReactContextBaseJavaModule {
     promise.resolve(results);
   }
 
+  @ReactMethod
+  public void fontSizeToFitWidth(ReadableMap options, Promise promise) {
+    int width = Math.round((float) options.getDouble("width"));
+    ReadableArray texts = options.getArray("texts");
+    float maxFontSize = (float) options.getDouble("fontSize");
+    float minFontSize = (float) Math.floor((double) ((float) options.getDouble("minFontSize")));
+    float currentFontSize = maxFontSize;
+    TextPaint paint = createTextPaint(currentFontSize, options.getString("fontFamily"), options.getString("fontWeight"));
+    WritableArray results = Arguments.createArray();
+    for (int i = 0; i < texts.size(); i++) {
+      String text = texts.getString(i);
+      float testedWidth = paint.measureText(text);
+      while (maxFontSize - minFontSize > 1.0f) {
+        if (testedWidth >= ((float) width)) {
+          maxFontSize = currentFontSize;
+        } else {
+          minFontSize = currentFontSize;
+        }
+        currentFontSize = (float) Math.floor((double) ((maxFontSize + minFontSize) / 2.0f));
+        paint.setTextSize(this.reactContext.getResources().getConfiguration().fontScale * currentFontSize);
+        testedWidth = paint.measureText(text);
+      }
+      results.pushDouble((double) minFontSize);
+    }
+    promise.resolve(results);
+  }
+
   @Deprecated
   @ReactMethod
   public void measure(ReadableMap options, Promise promise) {
